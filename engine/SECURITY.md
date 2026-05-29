@@ -7,15 +7,15 @@ If you discover a security vulnerability in AI Protector, please report it respo
 **Do NOT open a public GitHub issue for security vulnerabilities.**
 
 Instead, please email the maintainer directly or use GitHub's
-[private vulnerability reporting](https://github.com/Szesnasty/ai-protector/security/advisories/new).
+private vulnerability reporting for the public repository you are using.
 
 ## Supported Versions
 
 | Version | Status              |
 |---------|---------------------|
-| 0.2.x   | ✅ Active support    |
-| 0.1.x   | ⚠️ Security fixes only |
-| < 0.1   | ❌ Unsupported        |
+| 0.2.x   | Active support      |
+| 0.1.x   | Security fixes only |
+| < 0.1   | Unsupported         |
 
 ## Security Measures in This Project
 

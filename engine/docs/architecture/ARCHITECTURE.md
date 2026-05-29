@@ -11,6 +11,11 @@ AI Protector is a two-level security layer for LLM-powered applications:
 
 ```
                          ┌─────────────────────────────────┐
+                         │ Browser Extension (self-hosted) │
+                         │  ChatGPT / Claude prompt scan   │
+                         └────────────────┬────────────────┘
+                                          │ POST /v1/scan
+                         ┌─────────────────────────────────┐
                          │          Frontend (Nuxt 4)       │
                          │  Playground · Analytics · Agent  │
                          └──────────┬──────────┬───────────┘
@@ -33,6 +38,10 @@ AI Protector is a two-level security layer for LLM-powered applications:
 ```
 
 ---
+
+The public self-hosted workflow starts with the browser extension and
+`POST /v1/scan`. The full demo stack adds the frontend, agent demo, red-team
+benchmark UI, and playground.
 
 ## Level 1 — Proxy firewall
 
@@ -72,14 +81,15 @@ parse → intent → rules → scanners → decision
 
 ### Firewall policies
 
-Four built-in policies with different risk tolerance:
+Five built-in policies with different risk tolerance:
 
 | Policy | `max_risk` | `injection_threshold` | `pii_action` |
 |--------|-----------|----------------------|---------------|
-| fast | 0.8 | 0.7 | warn |
-| balanced | 0.5 | 0.4 | block |
-| strict | 0.3 | 0.2 | block |
-| paranoid | 0.15 | 0.1 | block |
+| fast | 0.9 | unset | unset |
+| balanced | 0.7 | 0.5 | unset |
+| strict | 0.5 | 0.3 | mask |
+| dlp | 0.6 | 0.5 | block |
+| paranoid | 0.3 | 0.2 | block |
 
 Custom policies can be created via the REST API.
 

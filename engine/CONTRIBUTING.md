@@ -1,114 +1,133 @@
-# Contributing to AI Protector
+# Contributing
 
-Thanks for your interest in contributing! This guide will help you get started.
+Thanks for helping improve AI Protector.
 
-## Quick Setup
+The public fork's primary path is the self-hosted engine plus browser extension.
+Keep changes local-first, documented, and easy to run.
 
-```bash
-git clone https://github.com/Szesnasty/ai-protector.git
-cd ai-protector
-make init          # builds everything + pulls LLM model (~4.7 GB)
-```
+## Setup
 
-Open http://localhost:3000 when done.
-
-## Development Workflow
-
-### Option A: Full Docker (simplest)
+Start the self-hosted engine:
 
 ```bash
-make dev           # start all services
-make logs          # stream logs
-make down          # stop
+cd engine
+make self-hosted
+make doctor
 ```
 
-### Option B: Native apps with hot-reload (recommended for development)
+Start the extension:
 
 ```bash
-make dev-infra     # start only PostgreSQL, Redis, Ollama, Langfuse
-
-# Terminal 1 — Proxy Service
-cd apps/proxy-service
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-uvicorn src.main:app --reload --port 8000
-
-# Terminal 2 — Agent Demo
-cd apps/agent-demo
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-uvicorn src.main:app --reload --port 8002
-
-# Terminal 3 — Frontend
-cd apps/frontend
-npm install
-npm run dev
+cd extension
+bun install
+bun run dev
 ```
 
-## Before Submitting a PR
+The engine API runs on `http://localhost:8000`; the extension calls
+`POST /v1/scan`.
+
+## Optional Full Demo
+
+The original demo stack is still available:
 
 ```bash
-make lint          # ruff (Python) + eslint (TypeScript/Vue)
-make test          # all tests must pass
+cd engine
+make demo
 ```
 
-## Commit Convention
+Open `http://localhost:3000`.
 
-We use [Conventional Commits](https://www.conventionalcommits.org/):
+## Local Development
+
+Run infrastructure only:
+
+```bash
+cd engine
+make dev
+```
+
+Run the proxy service locally:
+
+```bash
+cd engine/apps/proxy-service
+uv run --extra dev uvicorn src.main_self_hosted:app --reload --port 8000
+```
+
+Run the extension locally:
+
+```bash
+cd extension
+bun run dev
+```
+
+## Checks
+
+Engine:
+
+```bash
+cd engine/apps/proxy-service
+uv run --extra dev ruff check src tests
+uv run --extra dev pytest tests -q
+```
+
+Extension:
+
+```bash
+cd extension
+bun run compile
+bun test
+```
+
+DB-backed engine tests require PostgreSQL on `localhost:5432`.
+
+Local readiness:
+
+```bash
+cd engine
+make doctor
+```
+
+## Code Style
+
+| Area | Tool |
+|------|------|
+| Python | Ruff |
+| TypeScript | TypeScript compiler and Bun test |
+| Browser extension | WXT |
+
+Prefer small, focused changes. Update docs when behavior, commands, endpoints,
+or runtime assumptions change.
+
+## Commit Messages
+
+Use conventional prefixes:
 
 | Prefix | Use for |
 |--------|---------|
 | `feat:` | New feature |
 | `fix:` | Bug fix |
 | `docs:` | Documentation only |
-| `test:` | Adding/fixing tests |
-| `refactor:` | Code change that doesn't add feature or fix bug |
-| `dx:` | Developer experience improvements |
-| `ci:` | CI/CD changes |
+| `test:` | Adding or fixing tests |
+| `refactor:` | Code change without user-facing behavior |
+| `dx:` | Developer experience |
 
-Examples:
-```
-feat: add rate limiting to chat endpoint
-fix: streaming BLOCK requests not logged to analytics
-docs: update README quick start section
-```
+## Project Layout
 
-## Code Style
-
-| Language | Tool | Config |
-|----------|------|--------|
-| Python | [Ruff](https://docs.astral.sh/ruff/) | `pyproject.toml` (line-length: 120, Python 3.12) |
-| TypeScript / Vue | [ESLint](https://eslint.org/) | `eslint.config.mjs` |
-
-Don't format manually — the tools handle it:
-```bash
-make format        # auto-fix all formatting
+```text
+engine/
+  apps/proxy-service/      self-hosted scan engine and full demo API
+  apps/frontend/           optional demo dashboard
+  apps/agent-demo/         optional demo agent
+  infra/                   Docker Compose stack
+  docs/                    architecture and self-hosted docs
+extension/
+  entrypoints/             WXT service worker and content scripts
+  ui/                      warning UI
 ```
 
-## Project Structure
+## Pull Request Checklist
 
-```
-apps/
-├── proxy-service/     # Python FastAPI — LLM Firewall
-├── agent-demo/        # Python FastAPI — Customer Support Copilot
-└── frontend/          # Nuxt 4 + Vuetify 4 — Dashboard
-infra/
-└── docker-compose.yml # PostgreSQL, Redis, Ollama, Langfuse
-docs/
-├── architecture/      # System design, pipelines, threat model
-└── assets/            # Screenshots and diagrams
-```
-
-## PR Checklist
-
-Before requesting review, ensure:
-
-- [ ] Tests pass (`make test`)
-- [ ] Linting passes (`make lint`)
-- [ ] Commit messages follow Conventional Commits
-- [ ] New features have tests
-- [ ] Documentation updated if needed
-
-## Questions?
-
-Open a [GitHub Discussion](https://github.com/Szesnasty/ai-protector/discussions) for questions or ideas.
+- Tests or smoke checks run.
+- Public docs updated for command/API changes.
+- No private planning material added to public-facing docs.
+- New extension behavior is covered by tests where practical.

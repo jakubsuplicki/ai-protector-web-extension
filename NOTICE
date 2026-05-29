@@ -1,0 +1,11 @@
+AI Protector Self-Hosted
+
+This distribution includes work derived from AI Protector by Lukasz /
+Szesnasty, licensed under the Apache License, Version 2.0.
+
+Upstream repository: https://github.com/Szesnasty/ai-protector
+Base reference: v0.2.5
+
+This public fork repackages the engine into a self-hosted browser-extension
+workflow and adds extension-specific packaging, documentation, and local-first
+project direction.
