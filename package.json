@@ -1,0 +1,14 @@
+{
+  "name": "ai-protector-self-hosted",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "setup": "bun scripts/self-hosted-dev.mjs setup auto",
+    "setup:chrome": "bun scripts/self-hosted-dev.mjs setup chrome",
+    "setup:brave": "bun scripts/self-hosted-dev.mjs setup brave",
+    "setup:edge": "bun scripts/self-hosted-dev.mjs setup edge",
+    "doctor": "bash scripts/check-self-hosted.sh",
+    "engine": "bun scripts/self-hosted-dev.mjs engine"
+  }
+}

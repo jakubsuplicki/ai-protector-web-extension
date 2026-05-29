@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="shieldOff" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9ca3af"/>
+      <stop offset="0.55" stop-color="#6b7280"/>
+      <stop offset="1" stop-color="#4b5563"/>
+    </linearGradient>
+  </defs>
+
+  <!-- shield fills (almost) the whole canvas: ~6px margin all round -->
+  <path d="M64 6 L116 24 V62 C116 96 94 117 64 124 C34 117 12 96 12 62 V24 Z"
+        fill="url(#shieldOff)"/>
+
+  <!-- inner highlight stroke for depth -->
+  <path d="M64 6 L116 24 V62 C116 96 94 117 64 124 C34 117 12 96 12 62 V24 Z"
+        fill="none" stroke="#d1d5db" stroke-opacity="0.3" stroke-width="3"/>
+
+  <!-- offline: disconnect X so the state reads at a glance (not just grayer) -->
+  <line x1="44" y1="48" x2="84" y2="88"
+        stroke="#f3f4f6" stroke-width="11" stroke-linecap="round"/>
+  <line x1="84" y1="48" x2="44" y2="88"
+        stroke="#f3f4f6" stroke-width="11" stroke-linecap="round"/>
+</svg>

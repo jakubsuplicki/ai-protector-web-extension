@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Protector</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        color: #18212f;
+        background: #f6f7f9;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 360px;
+        margin: 0;
+        background: #f6f7f9;
+      }
+
+      main {
+        padding: 14px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.2;
+        letter-spacing: 0;
+      }
+
+      .mark {
+        width: 36px;
+        height: 36px;
+        display: block;
+        object-fit: contain;
+        /* The shield PNG is transparent; no background tile so it matches the
+           toolbar icon exactly. */
+      }
+
+      .status-line {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 12px;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #94a3b8;
+      }
+
+      .dot.is-online {
+        background: #16a34a;
+      }
+
+      .dot.is-offline {
+        background: #dc2626;
+      }
+
+      section {
+        padding: 12px 0;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .label-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      label,
+      .section-label {
+        color: #334155;
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      /* Helper text: a quiet line that explains the current control. */
+      .help {
+        margin: 7px 0 0;
+        color: #64748b;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .help strong {
+        color: #475569;
+        font-weight: 700;
+      }
+
+      /* Short subtitle shown under a section label (Sites, etc). */
+      .section-sub {
+        margin: -2px 0 8px;
+        color: #64748b;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .segmented {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .segment {
+        min-height: 34px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: #475569;
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .segment.is-active {
+        background: #102033;
+        color: #ffffff;
+      }
+
+      .field-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+      }
+
+      input[type="text"],
+      select {
+        width: 100%;
+        min-height: 34px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #0f172a;
+        font: inherit;
+        font-size: 12px;
+        padding: 0 9px;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .icon-button,
+      .text-button {
+        min-height: 34px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #243244;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 650;
+        padding: 0 10px;
+      }
+
+      .icon-button:hover,
+      .text-button:hover {
+        border-color: #94a3b8;
+        background: #f8fafc;
+      }
+
+      .toggle-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .toggle-row {
+        display: flex;
+        min-height: 34px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .toggle-row.is-disabled {
+        opacity: 0.55;
+      }
+
+      .switch {
+        position: relative;
+        width: 42px;
+        height: 24px;
+        flex: 0 0 auto;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: #cbd5e1;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .slider::before {
+        content: "";
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        top: 3px;
+        left: 3px;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
+        transition: transform 0.15s ease;
+      }
+
+      .switch input:checked + .slider {
+        background: #0f766e;
+      }
+
+      .switch input:checked + .slider::before {
+        transform: translateX(18px);
+      }
+
+      .last-scan {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        color: #475569;
+        font-size: 12px;
+      }
+
+      .last-scan div,
+      .last-scan span {
+        min-width: 0;
+      }
+
+      .last-scan strong {
+        display: block;
+        color: #0f172a;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .last-scan strong,
+      .last-scan div > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .pill {
+        max-width: 128px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e2e8f0;
+        color: #334155;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 8px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .pill.is-block {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .pill.is-allow {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .saved {
+        min-height: 16px;
+        color: #64748b;
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <img class="mark" src="/icons/icon-128.png" alt="AI Protector" width="36" height="36" />
+        <div>
+          <h1>AI Protector</h1>
+          <div class="status-line">
+            <span id="engine-dot" class="dot" aria-hidden="true"></span>
+            <span id="engine-status">Checking engine</span>
+          </div>
+        </div>
+      </header>
+
+      <section>
+        <div class="label-row">
+          <div class="section-label">Protection mode</div>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="Protection mode">
+          <button class="segment" type="button" data-mode="strict">Strict</button>
+          <button class="segment" type="button" data-mode="ask">Ask</button>
+          <button class="segment" type="button" data-mode="observe">Observe</button>
+        </div>
+        <p id="mode-help" class="help"></p>
+      </section>
+
+      <section>
+        <div class="label-row">
+          <label for="policy">Policy</label>
+        </div>
+        <select id="policy"></select>
+        <p id="policy-help" class="help"></p>
+      </section>
+
+      <section>
+        <div class="label-row">
+          <label for="engine-url">Engine URL</label>
+        </div>
+        <div class="field-row">
+          <input id="engine-url" type="text" autocomplete="off" spellcheck="false" />
+          <button id="check-engine" class="icon-button" type="button">Check</button>
+        </div>
+      </section>
+
+      <section>
+        <div class="label-row">
+          <div class="section-label">Sites</div>
+        </div>
+        <p class="section-sub">
+          Where protection runs. Turn a site off to stop scanning your prompts
+          there.
+        </p>
+        <div class="toggle-list">
+          <label class="toggle-row">
+            <span>ChatGPT</span>
+            <span class="switch">
+              <input id="site-chatgpt" type="checkbox" />
+              <span class="slider"></span>
+            </span>
+          </label>
+          <label class="toggle-row">
+            <span>Claude</span>
+            <span class="switch">
+              <input id="site-claude" type="checkbox" />
+              <span class="slider"></span>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <section>
+        <div class="label-row">
+          <div class="section-label">Send anyway for PII &amp; secrets</div>
+        </div>
+        <p id="sensitive-help" class="section-sub"></p>
+        <div class="toggle-list">
+          <label id="sensitive-row" class="toggle-row">
+            <span>Allow override for sensitive data</span>
+            <span class="switch">
+              <input id="allow-sensitive" type="checkbox" />
+              <span class="slider"></span>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <section>
+        <div id="last-scan" class="last-scan">
+          <div>
+            <strong>No scans yet</strong>
+            <span>Waiting for activity</span>
+          </div>
+          <span class="pill">Ready</span>
+        </div>
+      </section>
+
+      <footer>
+        <button id="reset" class="text-button" type="button">Reset</button>
+        <span id="saved" class="saved" role="status"></span>
+      </footer>
+    </main>
+    <script type="module" src="./popup/main.ts"></script>
+  </body>
+</html>

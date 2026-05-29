@@ -1,62 +1,91 @@
-# ==== Python ====
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.egg-info/
-*.egg
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
 dist/
 build/
-.venv/
-venv/
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
-htmlcov/
-.coverage
-.coverage.*
-coverage.xml
-*.so
-
-# ==== Node / Frontend ====
-node_modules/
-.nuxt/
+out/
 .output/
-.nitro/
-.cache/
-dist/
-*.tsbuildinfo
-.eslintcache
+.wxt/
+.next/
+.nuxt/
+.turbo/
+.vite/
 
-# ==== Docker ====
-docker-compose.override.yml
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# ==== Environment ====
+# Environment
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
+*.pem
 
-# ==== IDE ====
+# Caches
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.tsbuildinfo
+*.tsbuildinfo
+
+# Test / coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editors / IDEs
 .vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
 *~
-.DS_Store
-Thumbs.db
 
-# ==== Logs ====
-*.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# ==== Ollama models (local dev) ====
-ollama_models/
-
-demo-files/
-
-# ==== Benchmarks ====
-apps/proxy-service/benchmarks/results/*.json
-apps/proxy-service/benchmarks/datasets/
+# Misc
+.history/
+tmp/
+temp/
+public-export/

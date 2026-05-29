@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+set -eu
+
+tz="${PUBLIC_COMMIT_TZ:-Australia/Perth}"
+start_hour="${PUBLIC_COMMIT_START_HOUR:-18}"
+end_hour="${PUBLIC_COMMIT_END_HOUR:-23}"
+
+hook_name="$(basename "$0")"
+now="$(TZ="$tz" date '+%Y-%m-%d %H:%M:%S %Z')"
+hour="$(TZ="$tz" date '+%H')"
+hour="${hour#0}"
+if [ -z "$hour" ]; then
+  hour=0
+fi
+
+if [ "$hour" -ge "$start_hour" ] && [ "$hour" -lt "$end_hour" ]; then
+  exit 0
+fi
+
+cat >&2 <<EOF
+Blocked by public repo time guard ($hook_name).
+
+Current time: $now
+Allowed window: ${start_hour}:00-${end_hour}:00 $tz
+
+Create and push public commits during the allowed window so public history
+matches the working-hours boundary you want to keep.
+EOF
+
+exit 1
