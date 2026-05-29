@@ -1,5 +1,5 @@
 {
-  "name": "ai-protector-self-hosted",
+  "name": "ai-protector-web-extension",
   "version": "0.1.0",
   "type": "module",
   "private": true,

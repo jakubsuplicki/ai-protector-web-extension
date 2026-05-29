@@ -1,35 +1,8 @@
 # Security Policy
 
-## Reporting a Vulnerability
+The root [SECURITY.md](../SECURITY.md) is the source of truth for this public
+self-hosted browser-extension fork.
 
-If you discover a security vulnerability in AI Protector, please report it responsibly.
-
-**Do NOT open a public GitHub issue for security vulnerabilities.**
-
-Instead, please email the maintainer directly or use GitHub's
-private vulnerability reporting for the public repository you are using.
-
-## Supported Versions
-
-| Version | Status              |
-|---------|---------------------|
-| 0.2.x   | Active support      |
-| 0.1.x   | Security fixes only |
-| < 0.1   | Unsupported         |
-
-## Security Measures in This Project
-
-AI Protector is itself a security tool (LLM Firewall), and we take security seriously:
-
-- **Dependency scanning**: Dependabot monitors all dependencies weekly
-- **Static analysis**: CodeQL runs on every push and weekly
-- **Dependency review**: All PRs are checked for vulnerable dependencies
-- **No secrets in code**: All credentials are passed via environment variables
-
-## Scope
-
-This security policy covers the AI Protector codebase itself. It does **not** cover:
-
-- The security of the LLM models you run behind the firewall
-- Third-party services (Ollama, Langfuse, PostgreSQL) — those have their own security policies
-- Attack scenarios in the demo panel — those are intentionally malicious prompts for testing purposes
+Please do not open public GitHub issues for vulnerabilities. Use GitHub private
+vulnerability reporting for this repository if available, or contact the
+maintainer directly.

@@ -84,6 +84,9 @@ engine with:
 bun run engine
 ```
 
+Reload the unpacked extension from the browser extensions page after rebuilding
+it. You only need to remove and load it again if the folder path changes.
+
 Open ChatGPT or Claude in the launched browser. The extension calls the engine
 at `http://localhost:8000/v1/scan` by default.
 
@@ -183,3 +186,18 @@ bun test
 ```
 
 The DB-backed engine tests need PostgreSQL on `localhost:5432`.
+
+## Troubleshooting
+
+Run the readiness check from the repo root:
+
+```bash
+bun run doctor
+```
+
+Common issues:
+
+- Docker Desktop is not running.
+- Port `8000` is already in use.
+- The extension was rebuilt but not reloaded in the browser.
+- Node.js 22+ is missing for extension builds.

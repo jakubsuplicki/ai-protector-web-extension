@@ -61,6 +61,9 @@ In the extensions page:
 2. Click Load unpacked.
 3. Select `extension/dist/chrome-mv3`.
 
+This browser step is required once. Brave, Chrome, and Edge do not let a normal
+local app silently install an unpacked extension into a personal profile.
+
 The extension stays installed in that normal browser profile until you remove
 it. After the first setup, you usually only need to start the engine:
 
@@ -82,6 +85,9 @@ WXT_SCAN_ENDPOINT=http://localhost:8000/v1/scan bun run setup:brave
 
 You can also change the local engine URL from the extension popup after the
 extension is loaded.
+
+After rebuilding the extension, reload it from the browser extensions page. You
+only need to remove and load it again if the folder path changes.
 
 ## Popup Settings
 
@@ -165,3 +171,20 @@ bun test
 - Prompt extraction is request-shape dependent and may need updates when the
   target sites change.
 - The engine endpoint is local-first by default.
+
+## Troubleshooting
+
+If the popup says the engine is offline:
+
+```bash
+cd ..
+bun run doctor
+```
+
+If `bun run build` fails with a Node/Rolldown error, use Node.js 22+:
+
+```bash
+nvm use
+```
+
+The repo-level `bun run setup:*` commands also try to find Node 22+ automatically.

@@ -97,6 +97,9 @@ The extension toolbar popup controls local behavior: `Strict`, `Ask`, or
 `Observe` mode; seeded policy selection; enabled sites; and the local engine
 URL. Policy selection is sent to the engine as the `x-policy` header.
 
+Reload the unpacked extension from the browser extensions page after rebuilding
+it. You do not need to remove and load it again unless the folder path changes.
+
 ## API Shape
 
 ### `POST /v1/scan`
@@ -182,6 +185,17 @@ uv run --extra dev pytest tests -q
 
 The DB-backed tests require PostgreSQL on `localhost:5432`. The Docker profile
 is the easiest way to provide it.
+
+## Troubleshooting
+
+From the repository root:
+
+```bash
+bun run doctor
+```
+
+Check Docker Desktop, port `8000`, Node.js 22+, and whether the browser
+extension was reloaded after rebuilds.
 
 ## More Docs
 
