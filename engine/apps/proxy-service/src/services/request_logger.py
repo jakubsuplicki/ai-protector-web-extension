@@ -9,6 +9,7 @@ import uuid
 import structlog
 from sqlalchemy import select
 
+from src.config import get_settings
 from src.db.session import async_session
 from src.models.policy import Policy
 from src.models.request import Request
@@ -19,26 +20,43 @@ logger = structlog.get_logger()
 _policy_cache: dict[str, uuid.UUID] = {}
 
 
-async def _resolve_policy_id(policy_name: str) -> uuid.UUID | None:
-    """Return the UUID for a policy name, using an in-memory cache.
-
-    Falls back to 'balanced' if the requested policy is not found,
-    so that audit rows are never silently dropped.
-    """
+async def _lookup_policy_id(policy_name: str) -> uuid.UUID | None:
+    """Return the UUID for an active policy name, using an in-memory cache."""
     if policy_name in _policy_cache:
         return _policy_cache[policy_name]
 
     async with async_session() as session:
-        result = await session.execute(select(Policy.id).where(Policy.name == policy_name))
+        stmt = select(Policy.id).where(Policy.name == policy_name, Policy.is_active == True)  # noqa: E712
+        result = await session.execute(stmt.limit(1))
         row = result.scalar_one_or_none()
         if row is not None:
             _policy_cache[policy_name] = row
             return row
 
-    # Fallback: try 'balanced' default so we never silently lose logs
-    if policy_name != "balanced":
-        logger.warning("policy_not_found_falling_back", requested=policy_name, fallback="balanced")
-        return await _resolve_policy_id("balanced")
+    return None
+
+
+async def _resolve_policy_id(policy_name: str) -> uuid.UUID | None:
+    """Return an active policy UUID, falling back to a seeded default if needed."""
+    policy_id = await _lookup_policy_id(policy_name)
+    if policy_id is not None:
+        return policy_id
+
+    default_policy = get_settings().default_policy
+    fallbacks: list[str] = []
+    for candidate in (default_policy, "balanced"):
+        if candidate != policy_name and candidate not in fallbacks:
+            fallbacks.append(candidate)
+
+    for fallback in fallbacks:
+        fallback_id = await _lookup_policy_id(fallback)
+        if fallback_id is not None:
+            logger.warning(
+                "policy_not_found_falling_back",
+                requested=policy_name,
+                fallback=fallback,
+            )
+            return fallback_id
 
     return None
 
@@ -63,13 +81,19 @@ _SECRET_RE = [
 
 
 def _prompt_preview(messages: list[dict], max_len: int = 200) -> str | None:
-    """First *max_len* chars of the last user message, with secrets redacted."""
+    """First *max_len* chars of the last user message, with secrets redacted.
+
+    Redaction runs on the *full* message before truncation — otherwise a
+    secret token straddling the ``max_len`` boundary would be partially
+    sliced, defeating the regex match and landing half the credential in
+    the audit log.
+    """
     for msg in reversed(messages):
         if msg.get("role") == "user":
-            text = msg["content"][:max_len]
+            text = msg["content"]
             for pattern in _SECRET_RE:
                 text = pattern.sub("[REDACTED]", text)
-            return text
+            return text[:max_len]
     return None
 
 

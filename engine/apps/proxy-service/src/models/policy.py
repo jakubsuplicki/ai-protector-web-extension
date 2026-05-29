@@ -10,11 +10,11 @@ from src.models.base import Base, TimestampMixin, UUIDMixin
 
 
 class Policy(UUIDMixin, TimestampMixin, Base):
-    """Firewall policy configuration."""
+    """Firewall policy configuration for a self-hosted engine."""
 
     __tablename__ = "policies"
 
-    name: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     config: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

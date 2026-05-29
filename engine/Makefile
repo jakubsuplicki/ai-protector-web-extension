@@ -1,8 +1,10 @@
-.PHONY: demo up dev init down pull-model seed lint format test verify pre-commit-install pre-commit benchmark benchmark-quick benchmark-e2e benchmark-jailbreakbench
+.PHONY: demo up dev init self-hosted doctor down pull-model seed lint format test verify pre-commit-install pre-commit benchmark benchmark-quick benchmark-e2e benchmark-jailbreakbench
 
 # ── Quick start ─────────────────────────────────────────
 # Demo (no Ollama, mock LLM):     make demo
 # Full stack (Ollama + real LLM):  make up
+# Self-hosted extension engine:    make self-hosted
+# Self-hosted readiness check:     make doctor
 # Contributor (infra only):        make dev
 
 # Generate BENCHMARK_SECRET_KEY if empty in infra/.env
@@ -49,6 +51,20 @@ init: up pull-model
 	@echo ""
 	@echo "✅  AI Protector is ready! Open http://localhost:3000"
 
+self-hosted:
+	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "Created infra/.env from .env.example")
+	cd infra && APP_MODE=self-hosted docker compose --profile self-hosted up --build -d
+	@echo ""
+	@echo "AI Protector self-hosted engine is starting..."
+	@echo "    Engine API:  http://localhost:8000"
+	@echo "    Scan:        POST http://localhost:8000/v1/scan"
+	@echo ""
+	@echo "    Mode: self-hosted (core scan engine)"
+	@echo "    Default policy: dlp"
+
+doctor:
+	@../scripts/check-self-hosted.sh
+
 dev:
 	cd infra && docker compose up db redis ollama langfuse -d
 	@echo ""
@@ -66,10 +82,10 @@ seed:
 
 # ── Docker ──────────────────────────────────────────────
 down:
-	cd infra && docker compose --profile demo --profile full --profile test-agents down
+	cd infra && docker compose --profile demo --profile full --profile self-hosted --profile test-agents down
 
 reset:
-	cd infra && docker compose --profile demo --profile full --profile test-agents down -v
+	cd infra && docker compose --profile demo --profile full --profile self-hosted --profile test-agents down -v
 	@echo "🗑️  All data wiped (volumes removed)"
 
 logs:

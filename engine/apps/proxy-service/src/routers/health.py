@@ -129,8 +129,8 @@ async def health(
         "redis": await _check_redis(),
     }
 
-    # In demo mode Ollama and Langfuse are not started — skip checks
-    if settings.mode == "demo":
+    # Demo and self-hosted modes do not start Ollama/Langfuse.
+    if settings.mode == "demo" or settings.app_mode == "self-hosted":
         services["ollama"] = ServiceHealth(status="skipped")
         services["langfuse"] = ServiceHealth(status="skipped")
     else:
@@ -145,9 +145,11 @@ async def health(
         logger.warning("health_metrics_error", error_type=type(exc).__name__)
         metrics = None
 
+    public_mode = "self-hosted" if settings.app_mode == "self-hosted" else settings.mode
+
     return HealthResponse(
         status=overall,
-        mode=settings.mode,
+        mode=public_mode,
         services=services,
         version=settings.app_version,
         metrics=metrics,

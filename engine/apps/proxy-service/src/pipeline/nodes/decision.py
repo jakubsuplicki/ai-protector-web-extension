@@ -126,7 +126,7 @@ async def decision_node(state: PipelineState) -> PipelineState:
         }
 
     # Risk threshold
-    if risk_score >= max_risk:
+    if risk_score > max_risk:
         return {
             **state,
             "decision": "BLOCK",

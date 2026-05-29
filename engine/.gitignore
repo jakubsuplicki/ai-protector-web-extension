@@ -1,0 +1,62 @@
+# ==== Python ====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.so
+
+# ==== Node / Frontend ====
+node_modules/
+.nuxt/
+.output/
+.nitro/
+.cache/
+dist/
+*.tsbuildinfo
+.eslintcache
+
+# ==== Docker ====
+docker-compose.override.yml
+
+# ==== Environment ====
+.env
+.env.local
+.env.*.local
+
+# ==== IDE ====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==== Logs ====
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==== Ollama models (local dev) ====
+ollama_models/
+
+demo-files/
+
+# ==== Benchmarks ====
+apps/proxy-service/benchmarks/results/*.json
+apps/proxy-service/benchmarks/datasets/

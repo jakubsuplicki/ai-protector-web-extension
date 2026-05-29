@@ -11,6 +11,7 @@ full /v1/chat/completions endpoint would otherwise perform.
 
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
 
@@ -19,7 +20,7 @@ from fastapi import APIRouter, Header, Request
 from fastapi.responses import JSONResponse
 
 from src.config import get_settings
-from src.pipeline.runner import run_pre_llm_pipeline
+from src.pipeline.scan_runner import run_scan_pipeline
 from src.schemas.chat import ChatCompletionRequest
 from src.services.request_logger import log_request_from_state
 
@@ -42,21 +43,23 @@ async def scan(
     start = time.perf_counter()
 
     messages = [m.model_dump(exclude_none=True) for m in body.messages]
-    policy = x_policy or get_settings().default_policy
     settings = get_settings()
+
+    policy = x_policy or settings.default_policy
+    client_id = x_client_id
 
     log = logger.bind(
         request_id=request_id,
         model=body.model,
-        client_id=x_client_id,
+        client_id=client_id,
         policy=policy,
         message_count=len(messages),
     )
     log.info("scan_request")
 
-    result = await run_pre_llm_pipeline(
+    result = await run_scan_pipeline(
         request_id=request_id,
-        client_id=x_client_id,
+        client_id=client_id,
         policy_name=policy,
         model=body.model,
         messages=messages,
@@ -73,10 +76,11 @@ async def scan(
 
     # Log to Postgres (the pre-LLM pipeline has no logging node)
     result["latency_ms"] = latency_ms
-    try:
-        await log_request_from_state(dict(result))
-    except Exception as exc:
-        logger.error("scan_audit_log_failed", error_type=type(exc).__name__)
+    # Fire-and-forget: a DB hiccup on the audit write must not delay the
+    # scan response. ``log_request_from_state`` already swallows its own
+    # exceptions, so a bare ``create_task`` is safe here — the coroutine
+    # will log any failure internally and return quietly.
+    asyncio.create_task(log_request_from_state(dict(result)))
 
     payload = {
         "decision": decision,

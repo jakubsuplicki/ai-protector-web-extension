@@ -44,6 +44,18 @@ DEFAULT_POLICIES = [
         },
     },
     {
+        "name": "dlp",
+        "description": "DLP policy — Presidio PII detection + LLM Guard injection/secrets.",
+        "config": {
+            "nodes": ["llm_guard", "presidio", "logging"],
+            "thresholds": {
+                "max_risk": 0.6,
+                "pii_action": "block",
+                "injection_threshold": 0.5,
+            },
+        },
+    },
+    {
         "name": "paranoid",
         "description": "Maximum security — canary tokens + NeMo Guardrails + full audit logging.",
         "config": {
@@ -240,7 +252,11 @@ async def seed_denylist() -> None:
     async with async_session() as session:
         created = 0
         for policy_name in DENYLIST_POLICY_NAMES:
-            stmt = select(Policy).where(Policy.name == policy_name).options(joinedload(Policy.denylist_phrases))
+            stmt = (
+                select(Policy)
+                .where(Policy.name == policy_name)
+                .options(joinedload(Policy.denylist_phrases))
+            )
             result = await session.execute(stmt)
             policy = result.unique().scalar_one_or_none()
             if policy is None:

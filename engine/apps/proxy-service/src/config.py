@@ -74,9 +74,10 @@ class Settings(BaseSettings):
 
     # App
     mode: str = "demo"  # "demo" | "real" — demo uses MockProvider when no API key
+    app_mode: str = "demo"  # "demo" | "self-hosted" — self-hosted excludes wizard/red-team
     default_policy: str = "balanced"
     log_level: str = "INFO"
-    json_logs: bool = False  # True for production (structured JSON to stdout)
+    json_logs: bool = False  # True for structured JSON logs
     app_version: str = _get_package_version()
 
     # CORS — accepts JSON array or comma-separated string from env:
@@ -99,7 +100,7 @@ class Settings(BaseSettings):
     presidio_spacy_model: str = "en_core_web_sm"  # en_core_web_lg for prod
 
     # Compare demo
-    enable_direct_endpoint: bool = True  # Set False in production
+    enable_direct_endpoint: bool = True
 
     # Langfuse tracing
     enable_langfuse: bool = True

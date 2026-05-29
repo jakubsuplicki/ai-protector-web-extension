@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PolicyBase(BaseModel):
@@ -13,7 +13,7 @@ class PolicyBase(BaseModel):
 
     name: str
     description: str = ""
-    config: dict = {}
+    config: dict = Field(default_factory=dict)
     is_active: bool = True
 
 

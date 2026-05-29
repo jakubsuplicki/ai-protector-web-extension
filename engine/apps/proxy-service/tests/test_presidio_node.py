@@ -170,6 +170,71 @@ class TestMultiplePII:
         assert "PERSON" in result["risk_flags"]["pii"]
 
 
+class TestOverlapResolution:
+    """Overlapping spans of different entity types collapse to the strongest."""
+
+    @pytest.mark.asyncio
+    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    async def test_credit_card_wins_over_overlapping_date(self, mock_get):
+        # The exact false positive seen in the field: a card number ("4000 0000
+        # 0000 0002") matches CREDIT_CARD over the full span and DATE_TIME over
+        # a leading subset. Only the card should survive.
+        mock_get.return_value = _mock_analyzer(
+            [
+                _mock_result("CREDIT_CARD", 18, 37, score=1.0),
+                _mock_result("DATE_TIME", 18, 32, score=0.85),
+            ]
+        )
+        state = _base_state("my credit card is 4000 0000 0000 0002")
+        result = await presidio_node(state)
+
+        assert result["risk_flags"]["pii"] == ["CREDIT_CARD"]
+        assert result["risk_flags"]["pii_count"] == 1
+        entities = result["scanner_results"]["presidio"]["entities"]
+        assert len(entities) == 1
+        assert entities[0]["entity_type"] == "CREDIT_CARD"
+
+    @pytest.mark.asyncio
+    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    async def test_higher_score_wins_on_overlap(self, mock_get):
+        mock_get.return_value = _mock_analyzer(
+            [
+                _mock_result("LOCATION", 0, 10, score=0.4),
+                _mock_result("PERSON", 0, 10, score=0.85),
+            ]
+        )
+        result = await presidio_node(_base_state("Washington"))
+        assert result["risk_flags"]["pii"] == ["PERSON"]
+        assert result["risk_flags"]["pii_count"] == 1
+
+    @pytest.mark.asyncio
+    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    async def test_non_overlapping_entities_all_kept(self, mock_get):
+        # Adjacent / disjoint spans must NOT be dropped — only true overlaps.
+        mock_get.return_value = _mock_analyzer(
+            [
+                _mock_result("EMAIL_ADDRESS", 0, 16, score=0.9),
+                _mock_result("PHONE_NUMBER", 16, 28, score=0.9),  # touches, no overlap
+            ]
+        )
+        result = await presidio_node(_base_state("a@b.com5550123456"))
+        assert result["risk_flags"]["pii_count"] == 2
+
+    @pytest.mark.asyncio
+    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    async def test_kept_entities_preserve_document_order(self, mock_get):
+        mock_get.return_value = _mock_analyzer(
+            [
+                _mock_result("US_SSN", 30, 41, score=0.95),
+                _mock_result("EMAIL_ADDRESS", 0, 16, score=0.9),
+            ]
+        )
+        result = await presidio_node(_base_state("a@b.com is mine, ssn 123-45-6789"))
+        entities = result["scanner_results"]["presidio"]["entities"]
+        # Sorted by start offset, not by score.
+        assert [e["entity_type"] for e in entities] == ["EMAIL_ADDRESS", "US_SSN"]
+
+
 # ── Masking Tests ─────────────────────────────────────────────────────
 
 

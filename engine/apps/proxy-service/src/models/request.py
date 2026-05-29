@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Integer, String, Text, func
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -19,7 +19,7 @@ class Request(UUIDMixin, Base):
 
     client_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     policy_id: Mapped[uuid.UUID] = mapped_column(
-        __import__("sqlalchemy").ForeignKey("policies.id"),
+        ForeignKey("policies.id"),
         nullable=False,
         index=True,
     )

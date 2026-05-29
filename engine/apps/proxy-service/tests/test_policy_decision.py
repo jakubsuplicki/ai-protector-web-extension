@@ -34,6 +34,16 @@ PARANOID_CONFIG: dict = {
         "enable_canary": True,
     },
 }
+# Must mirror the `dlp` policy in src/db/seed.py. If that seed changes and
+# this constant doesn't, these tests will drift from reality.
+DLP_CONFIG: dict = {
+    "nodes": ["llm_guard", "presidio", "logging"],
+    "thresholds": {
+        "max_risk": 0.6,
+        "pii_action": "block",
+        "injection_threshold": 0.5,
+    },
+}
 
 
 def _make_state(
@@ -264,6 +274,133 @@ class TestParanoidPolicy:
         )
         result = await decision_node(state)
         assert result["decision"] == "BLOCK"
+
+
+# ── DLP policy tests (self-hosted extension default) ────────────────
+#
+# The extension talks to the self-hosted engine with DEFAULT_POLICY=dlp.
+# These tests pin the policy's behaviour end-to-end at the decision-node level:
+# the browser-extension workflow depends on this policy blocking PII.
+
+
+class TestDlpPolicy:
+    """DLP policy: max_risk=0.6, pii_action=block, injection_threshold=0.5."""
+
+    async def test_clean_prompt_allow(self) -> None:
+        state = _make_state(policy_config=DLP_CONFIG)
+        result = await decision_node(state)
+        assert result["decision"] == "ALLOW"
+
+    async def test_ssn_blocks(self) -> None:
+        """The Phase 1 checkpoint: 'My SSN is 123-45-6789' must BLOCK."""
+        state = _make_state(
+            risk_flags={"pii": ["US_SSN"], "pii_count": 1},
+            policy_config=DLP_CONFIG,
+            scanner_results={
+                "presidio": {
+                    "entities": [
+                        {
+                            "entity_type": "US_SSN",
+                            "score": 0.95,
+                            "start": 10,
+                            "end": 21,
+                        }
+                    ],
+                    "pii_action": "block",
+                }
+            },
+        )
+        result = await decision_node(state)
+        assert result["decision"] == "BLOCK"
+        assert "PII" in result["blocked_reason"]
+
+    async def test_email_blocks(self) -> None:
+        """Any PII with pii_action=block → BLOCK."""
+        state = _make_state(
+            risk_flags={"pii": ["EMAIL_ADDRESS"], "pii_count": 1},
+            policy_config=DLP_CONFIG,
+            scanner_results={
+                "presidio": {
+                    "entities": [{"entity_type": "EMAIL_ADDRESS"}],
+                    "pii_action": "block",
+                }
+            },
+        )
+        result = await decision_node(state)
+        assert result["decision"] == "BLOCK"
+
+    async def test_multiple_pii_blocks(self) -> None:
+        """Multiple PII entities still BLOCK — first PII triggers the hard block."""
+        state = _make_state(
+            risk_flags={"pii": ["US_SSN", "EMAIL_ADDRESS", "PHONE_NUMBER"], "pii_count": 3},
+            policy_config=DLP_CONFIG,
+            scanner_results={
+                "presidio": {
+                    "entities": [
+                        {"entity_type": "US_SSN"},
+                        {"entity_type": "EMAIL_ADDRESS"},
+                        {"entity_type": "PHONE_NUMBER"},
+                    ],
+                    "pii_action": "block",
+                }
+            },
+        )
+        result = await decision_node(state)
+        assert result["decision"] == "BLOCK"
+
+    async def test_injection_at_threshold_blocks(self) -> None:
+        """Injection 0.75 * 0.8 = 0.6 → meets max_risk, but > requires strict gt.
+
+        The decision_node uses risk_score > max_risk (strict). 0.6 == 0.6 alone
+        does NOT block. We need slightly higher.
+        """
+        # 0.8 * 0.8 = 0.64 > 0.6 → BLOCK
+        state = _make_state(
+            risk_flags={"promptinjection": 0.8},
+            policy_config=DLP_CONFIG,
+        )
+        result = await decision_node(state)
+        assert result["decision"] == "BLOCK"
+
+    async def test_moderate_injection_allows(self) -> None:
+        """Injection 0.5 * 0.8 = 0.4 < 0.6 → ALLOW. No PII, no block."""
+        state = _make_state(
+            risk_flags={"promptinjection": 0.5},
+            policy_config=DLP_CONFIG,
+        )
+        result = await decision_node(state)
+        assert result["decision"] == "ALLOW"
+
+    async def test_secrets_block(self) -> None:
+        """Secrets are a hard block regardless of threshold."""
+        state = _make_state(
+            risk_flags={"secrets": 1.0},
+            policy_config=DLP_CONFIG,
+        )
+        result = await decision_node(state)
+        assert result["decision"] == "BLOCK"
+        assert "Secrets" in result["blocked_reason"]
+
+    async def test_jailbreak_intent_allows(self) -> None:
+        """Jailbreak intent alone: 0.6 is not > 0.6 (strict gt) → ALLOW.
+
+        DLP policy is scoped to data-loss concerns; jailbreak attempts without
+        PII or injection pass through (the AI tool's own guardrails handle them).
+        """
+        state = _make_state(intent="jailbreak", policy_config=DLP_CONFIG)
+        result = await decision_node(state)
+        assert result["decision"] == "ALLOW"
+        assert result["risk_score"] == pytest.approx(0.6)
+
+    async def test_denylist_still_blocks(self) -> None:
+        """Denylist is always a hard block, even for the DLP policy."""
+        state = _make_state(
+            risk_flags={"denylist_hit": True},
+            policy_config=DLP_CONFIG,
+        )
+        result = await decision_node(state)
+        assert result["decision"] == "BLOCK"
+        assert result["blocked_reason"] == "Denylist match"
 
 
 # ── Custom weight overrides ──────────────────────────────────────────

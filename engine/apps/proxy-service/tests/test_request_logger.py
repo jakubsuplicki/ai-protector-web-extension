@@ -11,6 +11,7 @@ import pytest
 from src.services.request_logger import (
     _prompt_hash,
     _prompt_preview,
+    _resolve_policy_id,
     log_request,
     log_request_from_state,
 )
@@ -62,6 +63,57 @@ class TestPromptPreview:
     def test_returns_none_without_user(self):
         messages = [{"role": "system", "content": "System only"}]
         assert _prompt_preview(messages) is None
+
+    def test_redacts_before_truncation(self):
+        """Secret straddling the 200-char boundary must still be redacted.
+
+        Regression: ``_prompt_preview`` used to truncate first and then
+        apply the secret regex, so a token starting at char 150 of a
+        300-char message would be half-sliced and escape redaction —
+        leaking a partial credential into the audit preview.
+        """
+        # Put an OpenAI-shaped secret near the end of a long message so the
+        # token itself straddles the 200-char preview boundary.
+        filler = "A" * 180
+        secret = "sk-" + "b" * 40  # matches the (?:sk|pk)-[a-zA-Z0-9]{20,} pattern
+        messages = [{"role": "user", "content": filler + " " + secret}]
+        result = _prompt_preview(messages)
+        assert result is not None
+        assert len(result) <= 200
+        # No fragment of the secret should appear in the preview
+        assert "sk-" not in result
+        assert "bbbb" not in result
+        assert "[REDACTED]" in result
+
+
+class TestResolvePolicyId:
+    """Verify active-policy fallback order without touching the database."""
+
+    @pytest.mark.asyncio
+    @patch("src.services.request_logger.get_settings")
+    @patch("src.services.request_logger._lookup_policy_id", new_callable=AsyncMock)
+    async def test_uses_configured_default_before_balanced(self, mock_lookup, mock_settings):
+        mock_settings.return_value.default_policy = "dlp"
+        dlp_id = uuid.uuid4()
+        mock_lookup.side_effect = [None, dlp_id]
+
+        result = await _resolve_policy_id("missing-policy")
+
+        assert result == dlp_id
+        assert [call.args[0] for call in mock_lookup.await_args_list] == ["missing-policy", "dlp"]
+
+    @pytest.mark.asyncio
+    @patch("src.services.request_logger.get_settings")
+    @patch("src.services.request_logger._lookup_policy_id", new_callable=AsyncMock)
+    async def test_falls_back_to_balanced_if_default_missing(self, mock_lookup, mock_settings):
+        mock_settings.return_value.default_policy = "dlp"
+        balanced_id = uuid.uuid4()
+        mock_lookup.side_effect = [None, None, balanced_id]
+
+        result = await _resolve_policy_id("missing-policy")
+
+        assert result == balanced_id
+        assert [call.args[0] for call in mock_lookup.await_args_list] == ["missing-policy", "dlp", "balanced"]
 
 
 # ── log_request integration ─────────────────────────────────────────

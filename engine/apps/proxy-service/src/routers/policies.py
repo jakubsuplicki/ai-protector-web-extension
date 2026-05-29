@@ -19,7 +19,7 @@ logger = structlog.get_logger()
 
 router = APIRouter(tags=["policies"])
 
-BUILTIN_POLICIES = frozenset({"fast", "balanced", "strict", "paranoid"})
+BUILTIN_POLICIES = frozenset({"fast", "balanced", "strict", "dlp", "paranoid"})
 
 
 def _validate_config(config: dict) -> None:
@@ -56,7 +56,7 @@ async def list_policies(
     active_only: bool = Query(True),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[PolicyRead]:
-    """List all policies.  By default only active ones."""
+    """List all policies."""
     stmt = select(Policy).order_by(Policy.name)
     if active_only:
         stmt = stmt.where(Policy.is_active == True)  # noqa: E712

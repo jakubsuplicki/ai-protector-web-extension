@@ -85,6 +85,46 @@ def reset_anonymizer() -> None:
     _anonymizer = None
 
 
+# ── Overlap resolution ────────────────────────────────────────────────
+
+
+def resolve_overlaps(results: list) -> list:
+    """Drop overlapping entity spans, keeping the strongest match per region.
+
+    Presidio recognizers run independently, so a single span of text can match
+    several entity types at once. A credit-card number, for example, also looks
+    like a DATE_TIME to the date recognizer — yielding two overlapping results
+    for the same digits. Surfacing both inflates ``pii_count`` (skewing the risk
+    score) and shows the user a nonsensical "Date/time" finding inside their
+    card number.
+
+    Resolution rule: sort by score (desc), then span length (desc, so the more
+    complete match wins ties), and greedily keep a result only if it does not
+    overlap one already kept. Two spans overlap when ``a.start < b.end`` and
+    ``b.start < a.end`` (touching endpoints are adjacent, not overlapping).
+
+    Returns the kept results in their original document order.
+    """
+    if len(results) <= 1:
+        return results
+
+    ranked = sorted(
+        results,
+        key=lambda r: (r.score, r.end - r.start),
+        reverse=True,
+    )
+    kept: list = []
+    for candidate in ranked:
+        overlaps = any(
+            candidate.start < k.end and k.start < candidate.end for k in kept
+        )
+        if not overlaps:
+            kept.append(candidate)
+
+    kept.sort(key=lambda r: r.start)
+    return kept
+
+
 # ── Masking helper ────────────────────────────────────────────────────
 
 
@@ -155,6 +195,11 @@ async def presidio_node(state: PipelineState) -> PipelineState:
                 "presidio": {"error": str(exc)},
             },
         }
+
+    # De-duplicate overlapping spans before they reach the risk score, the
+    # masker, or the UI (see resolve_overlaps). Drives masking too, so we never
+    # anonymize a span that lost the overlap contest.
+    results = resolve_overlaps(results)
 
     entities_found = [
         {

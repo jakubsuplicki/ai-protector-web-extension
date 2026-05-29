@@ -51,13 +51,13 @@ async def _cleanup_policy(client: AsyncClient, policy_id: str) -> None:
 
 @pytest.mark.asyncio
 async def test_list_policies_returns_seeded(client: AsyncClient):
-    """GET /v1/policies should return at least the 4 built-in policies."""
+    """GET /v1/policies should return the seeded built-in policies."""
     resp = await client.get("/v1/policies")
     assert resp.status_code == 200
     data = resp.json()
     assert isinstance(data, list)
     names = {p["name"] for p in data}
-    assert {"fast", "balanced", "strict", "paranoid"} <= names
+    assert {"fast", "balanced", "strict", "dlp", "paranoid"} <= names
 
 
 @pytest.mark.asyncio
@@ -244,7 +244,7 @@ async def test_delete_builtin_policy_forbidden(client: AsyncClient):
 async def test_update_builtin_policy_forbidden(client: AsyncClient):
     """PATCH on built-in policy should return 403 — read-only."""
     resp = await client.get("/v1/policies")
-    for name in ("fast", "balanced", "strict", "paranoid"):
+    for name in ("fast", "balanced", "strict", "dlp", "paranoid"):
         policy = next((p for p in resp.json() if p["name"] == name), None)
         if policy is None:
             continue

@@ -1,5 +1,7 @@
 """Models package — import all models so Alembic can detect them."""
 
+import os
+
 from src.models.base import Base
 from src.models.denylist import DenylistPhrase
 from src.models.policy import Policy
@@ -12,10 +14,19 @@ def _register_wizard_models() -> None:
     Done as a function to avoid circular import at module load time
     (wizard.models → models.base is fine, but models.__init__ → wizard.models
     would trigger a loop).
+
+    Skipped in slim runtime modes where wizard tables are not needed.
     """
+    if os.environ.get("APP_MODE") == "self-hosted":
+        return
     import src.wizard.models  # noqa: F401
 
 
 _register_wizard_models()
 
-__all__ = ["Base", "DenylistPhrase", "Policy", "Request"]
+__all__ = [
+    "Base",
+    "DenylistPhrase",
+    "Policy",
+    "Request",
+]

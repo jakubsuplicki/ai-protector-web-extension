@@ -3,6 +3,7 @@
 # Quick start:
 #   make demo    → demo mode (mock LLM, no Ollama)
 #   make up      → full stack (Ollama + real LLM)
+#   make self-hosted → local engine for the browser extension
 #   make dev     → infra only (apps run locally)
 
 services:
@@ -79,6 +80,8 @@ services:
   proxy-service:
     build:
       context: ../apps/proxy-service
+      args:
+        INSTALL_PROFILE: full
     profiles: ["demo", "full"]
     ports:
       - "8000:8000"
@@ -86,6 +89,8 @@ services:
       - path: .env
         required: false
     environment:
+      APP_ENTRY: src.main:app
+      APP_MODE: demo
       MODE: ${MODE:-demo}
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/ai_protector}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
@@ -207,6 +212,34 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    networks:
+      - ai-protector
+
+  # ── Self-hosted extension engine ───────────────────────
+  proxy-service-self-hosted:
+    build:
+      context: ../apps/proxy-service
+      args:
+        INSTALL_PROFILE: self-hosted
+    profiles: ["self-hosted"]
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENTRY: src.main_self_hosted:app
+      APP_MODE: self-hosted
+      MODE: ${MODE:-real}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/ai_protector}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      DEFAULT_POLICY: ${DEFAULT_POLICY:-dlp}
+      ENABLE_NEMO_GUARDRAILS: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - ai-protector
 
