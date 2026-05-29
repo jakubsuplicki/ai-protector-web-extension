@@ -173,15 +173,15 @@ DB-backed engine tests require PostgreSQL on `localhost:5432`.
 - `UPSTREAM.md` - upstream credit and fork notes
 - `NOTICE` - attribution notice
 
-## Upstream Credit
+## Acknowledgements
 
-This project is derived from AI Protector by Lukasz / Szesnasty.
+This project is built on top of
+[Szesnasty/ai-protector](https://github.com/Szesnasty/ai-protector), created by
+Lukasz / Szesnasty. Thanks to Lukasz for building the original AI Protector
+engine and making it available under the Apache-2.0 license.
 
-Upstream: https://github.com/Szesnasty/ai-protector
-
-Base reference: v0.2.5
-
-See `UPSTREAM.md` and `NOTICE` for attribution details.
+This fork repackages that work as a self-hosted browser-extension workflow.
+See `UPSTREAM.md` and `NOTICE` for attribution and fork details.
 
 ## License
 

@@ -2,7 +2,10 @@
 
 This repository is a curated public fork of AI Protector.
 
-- Upstream: https://github.com/Szesnasty/ai-protector
+Thank you to Lukasz / Szesnasty for creating the original AI Protector project
+and making it available as open source.
+
+- Upstream: [Szesnasty/ai-protector](https://github.com/Szesnasty/ai-protector)
 - Base reference: v0.2.5
 - Upstream author credit: Lukasz / Szesnasty
 - License: Apache-2.0
